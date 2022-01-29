@@ -2846,29 +2846,25 @@ EOF
   HandleBinFile("$short/Root Entry/Fills6/Data.dat","\x06",0,0, \&HandleFill);
 
 
-  my %polygon_nets;
-  my %polygon_prio;
+  my @polygon_nets;
+  my @polygon_prio;
 
   HandleBinFile("$short/Root Entry/Polygons6/Data.dat","",0,0, sub 
   { 
     my %d=%{$_[0]};
 	my $net=($d{'NET'}||-1);
 	my $layer=mapLayer($d{'LAYER'}) || "F.Paste";
-	return unless $d{'REMOVEDEAD'} =~ /true/i;
 
-	if ($net >= 0) {
-	  $polygon_nets{$layer} = $net + 2;
-	}
 	my $pourindex=$d{'POURINDEX'}||0;
 	$pourindex-=1000 if($pourindex>=1000);
 	$pourindex-=100 if($pourindex>=100);
-	if ($pourindex) {
-	  $polygon_prio{$layer} = 100 - $pourindex;
-	}
+
+	push @polygon_nets, $net + 2;
+	push @polygon_prio, 100 - $pourindex;
   });
 
   my $regioncount = 1;
-  my %has_subpolygons;
+  my %has_subpoly_region;
 
   HandleBinFile("$short/Root Entry/Regions6/Data.dat","\x0b",0,0, sub 
   { 
@@ -2963,13 +2959,15 @@ EOF
 
 	my $subpoly = $d{'SUBPOLYINDEX'};
 	if ($subpoly >= 0) {
-	  $has_subpolygons{$layer} = 1;
+	  my $master = unpack("S", substr($value, 5, 2));
 
-	  if ((! defined $net || $net == 1) && defined $polygon_nets{$layer}) {
-		$net = $polygon_nets{$layer};
+	  $has_subpoly_region{$master} = 1;
+	  
+	  if ((! defined $net || $net == 1) && defined $polygon_nets[$master]) {
+		$net = $polygon_nets[$master];
 	  }
-	  if ($polygon_prio{$layer}) {
-		$priority = "(priority " . ($polygon_prio{$layer} + 1) . ")";
+	  if (defined $polygon_prio[$master]) {
+		$priority = "(priority " . ($polygon_prio[$master]) . ")";
 	  }
 	}
     my $netname=$netnames{$net};
@@ -3029,7 +3027,7 @@ EOF
 
 
   $count=0; 
-  
+
   HandleBinFile("$short/Root Entry/Polygons6/Data.dat","",0,0, sub 
   { 
 	my %d=%{$_[0]};
@@ -3046,8 +3044,8 @@ EOF
 	  print STDERR "WARNING: Pourindex $pourindex out of the expected range (0 .. 100)\n";
 	}
 	my $net=($d{'NET'}||-1)+2;
-	if ($d{'REMOVEDEAD'} =~ /^true$/i && $has_subpolygons{$layer}) {
-	  print STDERR "WARNING: Removing net from polygon pour #${count} layer ${layer}. Assuming it is a placeholder for SUBPOLYINDEX regions.\n";
+
+	if ($has_subpoly_region{$count}) {
 	  $net = 1;
 	}
 	

@@ -3,9 +3,12 @@ import FreeCAD
 import ImportGui
 import FreeCADGui
 import os,glob
-from PySide import QtGui
+from PySide2 import QtGui, QtWidgets
 
-for filename in glob.glob("Root Entry/Models/*.dat.step"):
+dir = QtWidgets.QFileDialog.getExistingDirectory(None, "Open Directory")
+
+for filename in glob.glob(os.path.normpath(os.path.join(dir,"**","*.dat.step")), recursive=True):
+	filename = os.path.normpath(filename)
 	ImportGui.open(filename)
 	App.setActiveDocument("Unnamed")
 	# If you have different filenames than .dat.step, you have to adapt the -9 length here:

@@ -1263,11 +1263,11 @@ sub HandlePads($$)
 	  my $tpos=$pos+1;
 	  foreach(0 .. 5)
 	  {
-		$linebreaks{$tpos}=3;
+		  $linebreaks{$tpos}=3;
 	    $starts[$_]=$tpos+4;
-		$lengths[$_]=unpack("V",msubstr($value,$tpos,4,"len[$_]"));
-		$contents[$_]=substr($value,$tpos,$lengths[$_]);
-		$tpos+=4+$lengths[$_];
+		  $lengths[$_]=unpack("V",msubstr($value,$tpos,4,"len[$_]"));
+		  $contents[$_]=substr($value,$tpos,$lengths[$_]);
+		  $tpos+=4+$lengths[$_];
 	  }
 	  $linebreaks{$tpos}=1;
 	  #print "len: $len\n";
@@ -1394,7 +1394,11 @@ sub HandlePads($$)
 	  
 	  my $onet=unpack("s",msubstr($value,$pos+26,2,"onet"));
   	  assertdata("Pad",$counter,"NET",$onet) if($onet>=0);
-      my $net=$onet+2;	  
+      my $net=$onet+2;
+    #print STDERR Dumper \%netnames;
+    if (keys %netnames eq 0){
+      %netnames = ("1"=>"Net1");
+    }
 	  my $netname=$netnames{$net};
 	  #print STDERR "ONet: $onet Net: $net NetName: $netname\n";
 	  
